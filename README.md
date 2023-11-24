@@ -1,10 +1,18 @@
+# Nvim guide for beginners
+---
+Neovim is a fork of Vim aiming to improve the code base for easier API implementation, a better user experience and plugin implementations. It is known for having really tricky keybindings and a step learning curve, so my aim with this guide is to make the editor more accessible for anyone. 
+
+The aim of this guide is to get to know this editor as a whole and not just some default keybindings. Therefore this guide tries to show one of many ways to create your own configuration, based on mine. You can follow literally step by step everything but I suggest you to take your time configuring each plugin further than I do.
+
+My configuration is intended to be as minimal as possible but without refusing the use of some complex plugins with lot of potential. You could also clone it as use it as yours, skipping also the guide, but you can also take this configuration as a template for your own. And don't hesitate to propose any change, ask any question or open any issue. I hope you enjoy this guide!
+
 ## Nvim Installation
 ---
-Neovim is a fork of Vim aiming to improve the code base for easier API implementation, a better user experience and plugin implementations. It is known for having really tricky keybindings and a step learning curve, so my aim with this guide is to make the editor more accessible for anyone. So let's get started, you can install the editor following the [official guide](https://github.com/neovim/neovim/wiki/Installing-Neovim).
+Do NOT use `apt` to install nvim as its not up to date and there are some plugins that don't work on old versions. The best way to install nvim is from the source, you can check how in the [official guide](https://github.com/neovim/neovim#install-from-source).
 
 Once installed you can execute the editor with:
 
-```
+```bash
 nvim
 ```
 
@@ -28,9 +36,11 @@ We will structure the configuration files as follows:
 ~/.config/nvim
 ├── init.lua
 └── lua
-    ├── plugin1.lua
-    ├── plugin2.lua
-	├── ...
+    ├── plugin
+	│   ├── plugin1.lua
+	│   ├── plugin2.lua
+	│   └── plugin3.lua
+	├── launch.lua
 	├── keymaps.lua
 	└── opts.lua
 
@@ -38,9 +48,11 @@ We will structure the configuration files as follows:
 
 - `init.lua` : This is the root of any module of Lua, as it acts as a main function and brings into scope the rest of files / modules.
 - `/lua`: This is the folder where lua looks for other modules by default.
+- `/plugin`: Here we will save all the plugins we will use.
 - `plugin[x].lua` : An specific file to configure and set up a certain plugin.
 - `keymaps.lua` : A file to set the keybindings.
 - `opts.lua` : A file to set some vim environment settings.
+- `launch.lua`: This file is related with the plugin management, we will see it later on.
 
 We will create all the files step by step, so let's start by creating this folders and files:
 
@@ -111,24 +123,26 @@ vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 ```
 
 Feel free to restart nvim and check the changes. There are some different aspects like the tabs, a column marker, the relative numbers of line according to your cursor position. Also you can now access the project view by `<Space>pv`. For more information about this changes and all the modules you can check and change go to [nvim documentation](https://neovim.io/doc/user/lua.html#lua-stdlib).
+
+The options like `undofile` and `undodir` are related with a plugin that we will se later on.
 ## Plugins
 ---
 This is the best way to customize our editor, so we will install some of the ones I use the most.
 ### [Lazy](https://github.com/folke/lazy.nvim)
 
-First we will install lazy as our plugins manager to make our life easier, so we can check their documentation in [lazy](https://github.com/folke/lazy.nvim) for further information. By now we can create `user/lazy.lua` and add this code:
+First we will install lazy as our plugins manager to make our life easier, so we can check their documentation in [lazy](https://github.com/folke/lazy.nvim) for further information. By now we can create `plugin/lazy.lua` and add this code:
 
 ```lua
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
-  vim.fn.system({
-    "git",
-    "clone",
-    "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
-    lazypath,
-  })
+	vim.fn.system({
+	    "git",
+	    "clone",
+	    "--filter=blob:none",
+	    "https://github.com/folke/lazy.nvim.git",
+	    "--branch=stable", -- latest stable release
+		lazypath,
+	})
 end
 vim.opt.rtp:prepend(lazypath)
 
@@ -137,7 +151,7 @@ require "lazy".setup(LAZY_PLUGIN_SPEC)
 
 And if we source the file (`:w` to save it and `:so` to source it), we can use our plugin manager by typing `:Lazy` in our editor. This will open a window that we can close by typing `q` as we don't need it right now.
 
-To install new plugins we will need to send a table (lua data structure comparable to a JSON) to the `setup()` function of `lazy`. For this, we will create a `launch.lua` file with a function that will append to this table every plugin. So we write in `user/launch.lua`:
+To install new plugins we will need to send a table (lua data structure comparable to a JSON) to the `setup()` function of `lazy`. For this, we will create a `launch.lua` file with a function that will append to this table every plugin. So we write in `launch.lua`:
 
 ```lua
 LAZY_PLUGIN_SPEC = {}
@@ -156,7 +170,7 @@ And let's also add this new function so our `init.lua` should look like this (th
 ```lua
 require "opts"
 require "launch"
-require "lazy"
+require "plugin.lazy"
 require "keymaps"
 ```
 
@@ -186,13 +200,13 @@ local M = {
     "rose-pine/nvim",
     lazy = false, -- Loads this plugin at the beginning
     priority = 1000, 
-  }
+}
 
-  function M.config()
-    vim.cmd.colorscheme "rose-pine"
-  end
+function M.config()
+	vim.cmd.colorscheme "rose-pine"
+end
 
-  return M
+return M
 
 ```
 
@@ -220,12 +234,12 @@ The default syntax highlighter of nvim does't really do the thing, so let's try 
 local M = {
     "nvim-treesitter/nvim-treesitter",
     build = "TSUpdate",
-    lazy = true,
-  }
+	lazy = false,   -- We want to see the highlighting since the start, so false
+}
 
 function M.config()
     require "nvim-treesitter.configs".setup {
-        ensure_installed = { "c", "lua", "rust" },
+        ensure_installed = { "c", "lua", "rust" , "bash" },
         sync_install = true,
         auto_install = true,
         highlight = { enable = true },
@@ -423,7 +437,6 @@ You can try source the file (`:so`) and try to figure out how to use this plugin
  - Harpoon also allows to manage terminals.
 
 This plugin gives you more options, so dive into the [official documentation](https://github.com/ThePrimeagen/harpoon/tree/master) and try them. For example you can try to set the tabline and highlight it, or check the support of `telescope`. The tabline is set in the files so you can check how is done if you don't get your way through the documentation of this plugin.
-
 
 ### [Undotree](https://github.com/mbbill/undotree)
 
@@ -660,3 +673,5 @@ These were the plugins that I use the most in my nvim configuration, but here ar
 - [vim-sneak](https://github.com/justinmk/vim-sneak): A faster way to move around the screen. 
 - [Lens.vim](https://github.com/camspiers/lens.vim): Automatic resizing of several splits.
 - [sniprun](https://github.com/michaelb/sniprun): Allows executing one or several lines of code without exiting nvim.
+
+This guide is inspired by configurations like [launch](https://github.com/LunarVim/Launch.nvim/tree/master) or the one from [ThePrimeagen](https://github.com/ThePrimeagen/init.lua).
