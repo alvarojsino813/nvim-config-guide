@@ -1,4 +1,3 @@
-print("Hola mundo")
 require "opts"
 require "launch"
 
@@ -8,9 +7,11 @@ spec("plugin.telescope")
 spec("plugin.fugitive")
 spec("plugin.harpoon")
 spec("plugin.undotree")
-spec("plugin.lsp-zero")
+spec("plugin.markdown-preview")
 spec("plugin.mason")
-spec("plugin.gen")
+spec("plugin.dap")
+spec("plugin.tmux-navigator")
 
 require "plugin.lazy"
+require "dap_config"
 require "keymaps"

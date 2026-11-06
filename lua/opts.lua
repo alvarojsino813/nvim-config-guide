@@ -8,7 +8,7 @@ vim.opt.shiftwidth = 3
 vim.opt.expandtab = true
 vim.smartindent = true
 
-vim.opt.wrap = false
+vim.opt.wrap = true
 
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
@@ -16,6 +16,7 @@ vim.opt.incsearch = true
 vim.opt.swapfile = false
 vim.opt.backup = false
 vim.opt.undofile = true
+
 -- Comment this line
 vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
 -- And uncomment this one in case you use Windows

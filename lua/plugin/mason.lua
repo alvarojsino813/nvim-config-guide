@@ -3,6 +3,16 @@ local M = {
 	dependencies = {
       'williamboman/mason-lspconfig.nvim',
       'nvim-lua/plenary.nvim',
+
+      -- Autocompletetion
+      'hrsh7th/nvim-cmp',
+      'neovim/nvim-lspconfig',
+      'hrsh7th/cmp-calc',
+      'hrsh7th/cmp-path',
+      'hrsh7th/cmp-nvim-lsp',
+      'hrsh7th/cmp-nvim-lua',
+      'FelipeLema/cmp-async-path',
+      "saadparwaiz1/cmp_luasnip"
 	},
 }
 
@@ -14,36 +24,55 @@ M.servers = {
 
 function M.config()
 
-   local lsp = require("lsp-zero")
-	lsp.preset("recommended")
+   require("mason").setup()
 
-   lsp.set_preferences({
-      suggest_lsp_servers = false,
-      sign_icons = {
-         error = 'E',
-         warn = 'W',
-         hint = 'H',
-         info = 'I'
+   local capabilities = require("cmp_nvim_lsp").default_capabilities()
+
+   require("mason-lspconfig").setup({
+      ensure_installed = {
+         "lua_ls",
+         "clangd",
+         "rust_analyzer",
+      },
+      handlers = {
+         function(server)
+            vim.lsp.config[server] = {
+               capabilities = capabilities,
+            }
+            vim.lsp.start(vim.lsp.config[server])
+         end,
       }
    })
 
-	require("lsp-zero").setup()
-	require("mason").setup()
-
-	require("mason-lspconfig").setup_handlers {
-		function (server_name)
-		    require "lspconfig" [server_name].setup {}
-		end
-	}
-
-
-	require("mason-lspconfig").setup {
-      ensure_installed = M.servers,
-      automatic_installation = true,
-	}
+   vim.lsp.config('rust_analyzer', {
+      capabilities = capabilities,
+      settings = {
+         ["rust-analyzer"] = {
+            cargo = { allFeatures = true },
+         },
+      },
+   })
 
    vim.diagnostic.config({
-      virtual_text = true
+      virtual_text = false,
+   })
+
+   local cmp = require("cmp")
+
+   cmp.setup({
+      mapping = cmp.mapping.preset.insert({
+         ['<C-y>'] = cmp.mapping.confirm({ select = true }), -- Ctrl+Y accepts
+         ["<C-Space>"] = cmp.mapping.complete(),
+         ['<C-e>'] = cmp.mapping.abort(),                  -- Ctrl+E rejects 
+      }),
+      sources = {
+         { name = "nvim_lsp" },
+         { name = "luasnip" },
+         { name = "async_path" },
+         { name = "nvim_lua" },
+         { name = "path" },
+         { name = "calc" },
+      },
    })
 
 end
